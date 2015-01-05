@@ -250,6 +250,7 @@ func main() {
     flag.Parse()
 
     os.Mkdir(*cache, 0755)
+    os.Mkdir(*folder, 0755)
     ListFolder()
 
     http.HandleFunc("/images/", GetImages)
