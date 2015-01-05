@@ -1,9 +1,6 @@
-build:
-	@go build
-
 debug:
 	@go-bindata -debug=true -ignore=\\.bower\\.json static/...
-	build
+	@go build
 
 release:
 	@go-bindata -ignore=\\.bower\\.json static/...

@@ -2,6 +2,7 @@ package main
 
 import (
     "encoding/json"
+    "flag"
     "io"
     "io/ioutil"
     "image"
@@ -23,19 +24,23 @@ type SelectableFile struct {
     Selected bool
 }
 
-var folder string
+var address = flag.String("address", "0.0.0.0", "server address")
+var port = flag.String("port", "4000", "server port")
+var cache = flag.String("cache", "cache", "folder for resized images")
+
+var folder = flag.String("images", "images", "folder with images")
 var selected string
 var files []SelectableFile
 
 
 func ListFolder() {
     files = []SelectableFile{}
-    raw, _ := ioutil.ReadDir(folder)
+    raw, _ := ioutil.ReadDir(*folder)
     noneSelected := true
     for _, f := range raw {
         ext := strings.ToLower(filepath.Ext(f.Name()))
         if ext == ".png" || ext == ".jpg" || ext == ".jpeg" {
-            name := filepath.Join("/", folder, f.Name())
+            name := filepath.Join("/", *folder, f.Name())
             isSelected := false
             if name == selected {
                 isSelected = true
@@ -73,6 +78,7 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 
         absFilename, err := filepath.Abs(filename)
         if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }
@@ -93,11 +99,12 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
                 resizedFilename += "_" + strconv.Itoa(height)
                 resizedFilename += ext
 
-                resizedFilename = filepath.Join("cache", resizedFilename)
+                resizedFilename = filepath.Join(*cache, resizedFilename)
 
                 if _, err := os.Stat(resizedFilename); os.IsNotExist(err) {
                     fSrc, err := os.Open(filename)
                     if err != nil {
+                        fmt.Printf("Error: %s\n", err.Error())
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
@@ -105,6 +112,7 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 
                     src, _, err := image.Decode(fSrc)
                     if err != nil {
+                        fmt.Printf("Error: %s\n", err.Error())
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
@@ -115,6 +123,7 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 
                     fDst, err := os.Create(resizedFilename)
                     if err != nil {
+                        fmt.Printf("Error: %s\n", err.Error())
                         http.Error(w, err.Error(), http.StatusInternalServerError)
                         return
                     }
@@ -133,12 +142,17 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 
             http.ServeFile(w, r, filename)
 
+            fmt.Printf("Serving image %s\n", filename)
+
         } else if r.Method == "DELETE" {
             // TODO: remove cached resized versions of the image
             if err := os.Remove(filename); err != nil {
+                fmt.Printf("Error: %s\n", err.Error())
                 http.Error(w, err.Error(), http.StatusInternalServerError)
                 return
             }
+
+            fmt.Printf("Removed %s\n", filename)
 
             w.WriteHeader(http.StatusNoContent)
         }
@@ -149,15 +163,19 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
 func SelectImage(w http.ResponseWriter, r *http.Request) {
     jsonDoc, err := ioutil.ReadAll(r.Body);
     if err != nil {
+        fmt.Printf("Error: %s\n", err.Error())
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
     selectedFile := SelectableFile{}
     if err := json.Unmarshal(jsonDoc, &selectedFile); err != nil {
+        fmt.Printf("Error: %s\n", err.Error())
         http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
+
+    fmt.Printf("Selected %s\n", selectedFile.Name)
 
     for _, file := range files {
         if file.Name == selectedFile.Name {
@@ -182,8 +200,9 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 
     defer file.Close()
 
-    out, err := os.Create(filepath.Join(folder, header.Filename))
+    out, err := os.Create(filepath.Join(*folder, header.Filename))
     if err != nil {
+        fmt.Printf("Error: %s\n", err.Error())
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
@@ -192,9 +211,12 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 
     _, err = io.Copy(out, file)
     if err != nil {
+        fmt.Printf("Error: %s\n", err.Error())
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
+
+    fmt.Printf("Uploaded %s\n", header.Filename)
 
     w.WriteHeader(http.StatusNoContent)
 }
@@ -204,6 +226,7 @@ func Screen(w http.ResponseWriter, r *http.Request) {
     if r.Header.Get("Content-Type") == "application/json" {
         jsonData, err := json.MarshalIndent(SelectableFile{selected, true}, "", "    ")
         if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }
@@ -211,6 +234,7 @@ func Screen(w http.ResponseWriter, r *http.Request) {
     } else {
         data, err := Asset("static/screen.html")
         if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
             http.Error(w, err.Error(), http.StatusInternalServerError)
             return
         }
@@ -223,8 +247,9 @@ func Screen(w http.ResponseWriter, r *http.Request) {
 
 
 func main() {
-    os.Mkdir("cache", 0755)
-    folder = "./images"
+    flag.Parse()
+
+    os.Mkdir(*cache, 0755)
     ListFolder()
 
     http.HandleFunc("/images/", GetImages)
@@ -234,8 +259,8 @@ func main() {
 
     http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"}))
 
-    fmt.Println("Started, serving at 4000")
-    err := http.ListenAndServe(":4000", nil)
+    fmt.Printf("Starting server at: http://%s:%s/ \n", *address, *port)
+    err := http.ListenAndServe(*address + ":" + *port, nil)
     if err != nil {
         panic("ListenAndServe: " + err.Error())
     }
