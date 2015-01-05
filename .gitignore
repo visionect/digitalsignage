@@ -25,4 +25,6 @@ _testmain.go
 
 images/
 cache/
+release/
+digitalsignage
 bindata.go
