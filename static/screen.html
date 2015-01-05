@@ -1,0 +1,42 @@
+<html>
+    <head>
+        <title>Visionect Digital Signage</title>
+        <style media="screen">
+            body {
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <img />
+        <script charset="utf-8">
+            var image = document.getElementsByTagName('img')[0];
+
+            image.onload = function() {
+                if (typeof okular != 'undefined') {
+                    okular.KoalaRenderImage();
+                }
+            };
+
+            image.src = '{{.}}?width=' + window.innerWidth + '&height=' + window.innerHeight;
+
+            var request = new XMLHttpRequest();
+
+            request.onload = function() {
+                if (request.status >= 200 && request.status < 400){
+                    // Success!
+                    var data = JSON.parse(request.responseText);
+                    if (image.src.indexOf(data.Name) == -1) {
+                        image.src = data.Name + '?width=' + window.innerWidth + '&height=' + window.innerHeight;
+                    }
+                }
+            };
+
+            setInterval(function() {
+                request.open('GET', '/screen', true);
+                request.setRequestHeader('Content-Type', 'application/json');
+                request.send();
+            }, 5000);
+        </script>
+    </body>
+</html>

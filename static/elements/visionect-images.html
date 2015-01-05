@@ -1,0 +1,106 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-shadow/paper-shadow.html">
+<link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
+<link rel="import" href="../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+
+<polymer-element name="visionect-images">
+    <template>
+        <style media="screen">
+            paper-shadow {
+                width: 300px;
+                height: 200px;
+                margin: 16px;
+                background-position: center;
+                color: white;
+            }
+
+            .green {
+                background: #259b24;
+                border: 1px solid #257E24;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                float: right;
+                margin: 10px;
+            }
+
+            .green core-icon {
+                margin: 8px;
+            }
+
+            paper-fab {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+            }
+        </style>
+
+        <core-ajax id="images" url="/images/" handleAs="json" auto on-core-response="{{ parse }}"></core-ajax>
+
+        <div horizontal around-justified layout wrap>
+            <template repeat="{{image in images}}">
+                <paper-shadow class="image" data-image="{{ image.Name }}" style="background-image: url('{{ image.Name }}?width=300&amp;height=200')" z="1" on-click="{{ select }}">
+                    <paper-ripple fit></paper-ripple>
+                    <template if="{{ image.Selected }}">
+                        <paper-shadow class="green" z="1">
+                            <core-icon icon="done"></core-icon>
+                        </paper-shadow>
+                    </template>
+                    <paper-fab mini icon="delete" title="delete" on-click="{{ delete }}"></paper-fab>
+                </paper-shadow>
+            </template>
+        </div>
+
+        <core-ajax id="select" url="/select" handleAs="json" method="post"></core-ajax>
+        <core-ajax id="delete" method="delete"></core-ajax>
+
+    </template>
+
+    <script charset="utf-8">
+        Polymer({
+            ready: function() {
+
+                var images = this.$.images;
+
+                setInterval(function() {
+                    images.go();
+                }, 1000);
+
+                this.images = [];
+
+            },
+            parse: function(e) {
+                this.images = e.detail.response;
+            },
+            select: function(e) {
+                this.images.forEach(function(image) {
+                    if (image.Selected) {
+                        image.Selected = false;
+                    }
+                    if (image.Name == e.currentTarget.dataset.image) {
+                        image.Selected = true;
+                    }
+                });
+
+                this.$.select.body = JSON.stringify({
+                    Name: e.currentTarget.dataset.image,
+                    Selected: true
+                });
+                this.$.select.contentType = 'application/json';
+                this.$.select.go();
+            },
+            delete: function(e) {
+                e.stopPropagation();
+
+                var image = e.currentTarget.parentNode.dataset.image;
+                this.images.splice(this.images.map(function(i) {
+                    return i.Name
+                }).indexOf(image), 1);
+
+                this.$.delete.url = image;
+                this.$.delete.go();
+            }
+        });
+    </script>
+</polymer-element>

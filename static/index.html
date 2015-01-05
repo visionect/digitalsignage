@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Visionect Digital Signage</title>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+    <script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
+
+    <link rel="import" href="bower_components/font-roboto/roboto.html">
+    <link rel="import" href="bower_components/core-toolbar/core-toolbar.html">
+    <link rel="import" href="bower_components/core-media-query/core-media-query.html">
+    <link rel="import" href="bower_components/core-icons/core-icons.html">
+    <link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+    <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+
+    <link rel="import" href="bower_components/paper-toast/paper-toast.html">
+    <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
+    <link rel="import" href="bower_components/ajax-form/ajax-form.html">
+    <link rel="import" href="bower_components/file-input/file-input.html">
+
+    <link rel="import" href="elements/visionect-images.html">
+
+    <style>
+
+    body {
+        height: 100%;
+        font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    core-header-panel {
+    }
+
+    core-toolbar {
+        color: #f1f1f1;
+        fill: #f1f1f1;
+    }
+
+    paper-spinner::shadow .circle {
+        border-color: #ffffff;
+    }
+
+    </style>
+
+</head>
+<body fullbleed vertical layout unresolved>
+    <core-header-panel flex>
+        <core-toolbar style="background: #4285f4;">
+            <span flex>Visionect Digital Signage</span>
+            <form is="ajax-form" action="/upload" method="post" enctype="multipart/form-data">
+
+                <file-input name="file" class="btn btn-primary" extensions='["jpeg", "jpg", "png"]'>
+                    <core-icon icon="file-upload">
+                        <paper-spinner></paper-spinner>
+                    </core-icon>
+                </file-input>
+                <paper-toast id="toast-error" role="alert" text="Connection timed out. Showing limited messages.">
+                    <div style="color: #eeff41;" onclick="document.getElementsByTagName('form')[0].submit()">Retry</div>
+                </paper-toast>
+
+            </form>
+        </core-toolbar>
+
+
+        <visionect-images></visionect-images>
+
+</core-header-panel>
+</body>
+
+<script charset="utf-8">
+    var upload_form = document.getElementsByTagName("form")[0],
+        upload_icon = document.getElementsByTagName("core-icon")[0],
+        spinner = document.getElementsByTagName("paper-spinner")[0];
+
+    document.getElementsByTagName('file-input')[0].addEventListener('change', function(event) {
+        if (event.detail.valid.length) {
+            upload_icon.style.color = '#4285f4';
+            spinner.active = true;
+            upload_form.submit();
+        }
+    });
+
+    upload_form.addEventListener('submitted', function(e) {
+        upload_icon.style.color = '#f1f1f1';
+        spinner.active = false;
+
+        if (e.detail.status < 200 || e.detail.status > 299) {
+            var toast = document.querySelector('#toast-error');
+            toast.text = "Error: " + e.detail.response;
+            toast.show();
+        }
+    });
+
+</script>
+
+</html>
