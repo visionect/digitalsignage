@@ -40,7 +40,7 @@ func ListFolder() {
     for _, f := range raw {
         ext := strings.ToLower(filepath.Ext(f.Name()))
         if ext == ".png" || ext == ".jpg" || ext == ".jpeg" {
-            name := filepath.Join("/", *folder, f.Name())
+            name := filepath.ToSlash(filepath.Join("/", *folder, f.Name()))
             isSelected := false
             if name == selected {
                 isSelected = true
@@ -74,7 +74,7 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
             w.Write(jsonData)
         }
     } else {
-        filename := r.URL.Path[1:]
+        filename := filepath.FromSlash(r.URL.Path[1:])
 
         absFilename, err := filepath.Abs(filename)
         if err != nil {
