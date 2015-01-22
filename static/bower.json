@@ -25,6 +25,7 @@
     "core-ajax": "Polymer/core-ajax#~0.5.2",
     "core-header-panel": "polymer/core-header-panel#~0.5.2",
     "paper-shadow": "polymer/paper-shadow#~0.5.2",
-    "paper-fab": "polymer/paper-fab#~0.5.2"
+    "paper-fab": "polymer/paper-fab#~0.5.2",
+    "core-tooltip": "polymer/core-tooltip#~0.5.3"
   }
 }

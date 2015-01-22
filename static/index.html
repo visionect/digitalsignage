@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Visionect Digital Signage</title>
+    <title>Digital signage demo by Visionect</title>
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
 
     <script src="bower_components/webcomponentsjs/webcomponents.min.js"></script>
 
@@ -17,6 +18,7 @@
     <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
     <link rel="import" href="bower_components/ajax-form/ajax-form.html">
     <link rel="import" href="bower_components/file-input/file-input.html">
+    <link rel="import" href="bower_components/core-tooltip/core-tooltip.html">
 
     <link rel="import" href="elements/visionect-images.html">
 
@@ -42,20 +44,35 @@
         border-color: #ffffff;
     }
 
+    #logo {
+        height: 30px;
+        overflow: hidden;
+    }
+
+    #logo span {
+        top: -7px;
+        position: relative;
+        left: 15px;
+        /*
+        white-space: nowrap;
+        */
+    }
+
     </style>
 
 </head>
 <body fullbleed vertical layout unresolved>
     <core-header-panel flex>
         <core-toolbar style="background: #4285f4;">
-            <span flex>Visionect Digital Signage Demo</span>
+            <span id="logo" flex> <img src="/logo_only.png" alt="Visionect" /><span>Digital signage demo by Visionect</span></span>
             <form is="ajax-form" action="/upload" method="post" enctype="multipart/form-data">
-
-                <file-input name="file" class="btn btn-primary" extensions='["jpeg", "jpg", "png"]'>
-                    <core-icon icon="file-upload">
-                        <paper-spinner></paper-spinner>
-                    </core-icon>
-                </file-input>
+                <core-tooltip label="Upload image" position="left">
+                    <file-input name="file" class="btn btn-primary" extensions='["jpeg", "jpg", "png"]'>
+                        <core-icon icon="file-upload">
+                            <paper-spinner></paper-spinner>
+                        </core-icon>
+                    </file-input>
+                </core-tooltip>
                 <paper-toast id="toast-error" role="alert" text="Connection timed out. Showing limited messages.">
                     <div style="color: #eeff41;" onclick="document.getElementsByTagName('form')[0].submit()">Retry</div>
                 </paper-toast>

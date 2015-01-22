@@ -3,6 +3,7 @@
 <link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
 <link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="../bower_components/core-tooltip/core-tooltip.html">
 
 <polymer-element name="visionect-images">
     <template>
@@ -38,17 +39,19 @@
 
         <core-ajax id="images" url="/images/" handleAs="json" auto on-core-response="{{ parse }}"></core-ajax>
 
-        <div horizontal  layout wrap>
+        <div horizontal layout wrap>
             <template repeat="{{image in images}}">
-                <paper-shadow class="image" data-image="{{ image.Name }}" style="background-image: url('{{ image.Name }}?width=300&amp;height=200')" z="1" on-click="{{ select }}">
-                    <paper-ripple fit></paper-ripple>
-                    <template if="{{ image.Selected }}">
-                        <paper-shadow class="green" z="1">
-                            <core-icon icon="done"></core-icon>
-                        </paper-shadow>
-                    </template>
-                    <paper-fab mini icon="delete" title="delete" on-click="{{ delete }}"></paper-fab>
-                </paper-shadow>
+                <core-tooltip label="Select image" position="bottom">
+                    <paper-shadow class="image" data-image="{{ image.Name }}" style="background-image: url('{{ image.Name }}?width=300&amp;height=200')" z="1" on-click="{{ select }}">
+                        <paper-ripple fit></paper-ripple>
+                        <template if="{{ image.Selected }}">
+                            <paper-shadow class="green" z="1">
+                                <core-icon icon="done"></core-icon>
+                            </paper-shadow>
+                        </template>
+                        <paper-fab mini icon="delete" title="delete" on-click="{{ delete }}"></paper-fab>
+                    </paper-shadow>
+                </core-tooltip>
             </template>
         </div>
 

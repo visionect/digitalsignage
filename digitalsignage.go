@@ -260,7 +260,12 @@ func main() {
 
     http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"}))
 
-    fmt.Printf("Starting server at: http://%s:%s/ \n", *address, *port)
+    fmt.Println("Digital signage demo by Visionect")
+    fmt.Println("http://www.visionect.com")
+    fmt.Printf("\nStarting server at: http://%s:%s/ \n", *address, *port)
+    fmt.Printf("Serving images from: %s \n", *folder)
+    fmt.Println("\nHelp available with -h, exit with Ctrl-C")
+
     err := http.ListenAndServe(*address + ":" + *port, nil)
     if err != nil {
         panic("ListenAndServe: " + err.Error())
