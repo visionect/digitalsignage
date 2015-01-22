@@ -38,7 +38,7 @@
 
         <core-ajax id="images" url="/images/" handleAs="json" auto on-core-response="{{ parse }}"></core-ajax>
 
-        <div horizontal around-justified layout wrap>
+        <div horizontal  layout wrap>
             <template repeat="{{image in images}}">
                 <paper-shadow class="image" data-image="{{ image.Name }}" style="background-image: url('{{ image.Name }}?width=300&amp;height=200')" z="1" on-click="{{ select }}">
                     <paper-ripple fit></paper-ripple>
