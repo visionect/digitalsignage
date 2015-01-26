@@ -10,33 +10,35 @@
     <body>
         <img />
         <script charset="utf-8">
-            var image = document.getElementsByTagName('img')[0];
+            document.addEventListener('DOMContentLoaded', function() {
+                var image = document.getElementsByTagName('img')[0];
+                image.src = encodeURIComponent('{{.}}') + '?width=' + window.innerWidth + '&height=' + window.innerHeight;
 
-            image.onload = function() {
-                if (typeof okular != 'undefined') {
-                    okular.KoalaRenderImage();
+                var preloadImage = new Image;
+                preloadImage.onload = function() {
+                    image.src = this.src;
                 }
-            };
 
-            image.src = '{{.}}?width=' + window.innerWidth + '&height=' + window.innerHeight;
+                var request = new XMLHttpRequest();
 
-            var request = new XMLHttpRequest();
+                request.onload = function() {
+                    if (request.status >= 200 && request.status < 400){
+                        // Success!
+                        var data = JSON.parse(request.responseText);
 
-            request.onload = function() {
-                if (request.status >= 200 && request.status < 400){
-                    // Success!
-                    var data = JSON.parse(request.responseText);
-                    if (image.src.indexOf(data.Name) == -1) {
-                        image.src = data.Name + '?width=' + window.innerWidth + '&height=' + window.innerHeight;
+                        if (image.src.indexOf(encodeURIComponent(data.Name)) == -1 || window.innerWidth != image.width || window.innerHeight != image.height) {
+                            // Preload image in detached DOM
+                            preloadImage.src = encodeURIComponent(data.Name) + '?width=' + window.innerWidth + '&amp;height=' + window.innerHeight;
+                        }
                     }
-                }
-            };
+                };
 
-            setInterval(function() {
-                request.open('GET', '/screen', true);
-                request.setRequestHeader('Content-Type', 'application/json');
-                request.send();
-            }, 5000);
+                setInterval(function() {
+                    request.open('GET', '/screen', true);
+                    request.setRequestHeader('Content-Type', 'application/json');
+                    request.send();
+                }, 5000);
+            }, false);
         </script>
     </body>
 </html>

@@ -117,24 +117,27 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
                         return
                     }
 
-                    dst := image.NewRGBA(image.Rect(0, 0, width, height))
+                    if !(src.Bounds().Max.X == width && src.Bounds().Max.Y == height) {
 
-                    graphics.Thumbnail(dst, src)
+                        dst := image.NewRGBA(image.Rect(0, 0, width, height))
 
-                    fDst, err := os.Create(resizedFilename)
-                    if err != nil {
-                        fmt.Printf("Error: %s\n", err.Error())
-                        http.Error(w, err.Error(), http.StatusInternalServerError)
-                        return
+                        graphics.Thumbnail(dst, src)
+
+                        fDst, err := os.Create(resizedFilename)
+                        if err != nil {
+                            fmt.Printf("Error: %s\n", err.Error())
+                            http.Error(w, err.Error(), http.StatusInternalServerError)
+                            return
+                        }
+                        defer fDst.Close()
+
+                        if ext == ".png" {
+                            png.Encode(fDst, dst)
+                        } else {
+                            jpeg.Encode(fDst, dst, &jpeg.Options{95})
+                        }
+                        filename = resizedFilename
                     }
-                    defer fDst.Close()
-
-                    if ext == ".png" {
-                        png.Encode(fDst, dst)
-                    } else {
-                        jpeg.Encode(fDst, dst, &jpeg.Options{jpeg.DefaultQuality})
-                    }
-                    filename = resizedFilename
                 } else {
                     filename = resizedFilename
                 }
