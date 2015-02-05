@@ -41,6 +41,9 @@ func ListFolder() {
         ext := strings.ToLower(filepath.Ext(f.Name()))
         if ext == ".png" || ext == ".jpg" || ext == ".jpeg" {
             name := filepath.ToSlash(filepath.Join("/", *folder, f.Name()))
+            if name[:2] == "//" {
+                name = name[1:]
+            }
             isSelected := false
             if name == selected {
                 isSelected = true
