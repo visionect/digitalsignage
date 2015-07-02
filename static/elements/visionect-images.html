@@ -1,80 +1,84 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/paper-shadow/paper-shadow.html">
+<link rel="import" href="../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../bower_components/paper-ripple/paper-ripple.html">
 <link rel="import" href="../bower_components/paper-fab/paper-fab.html">
-<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
-<link rel="import" href="../bower_components/core-tooltip/core-tooltip.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<!--<link rel="import" href="../bower_components/core-tooltip/core-tooltip.html">-->
 
-<polymer-element name="visionect-images">
+<dom-module id="visionect-images">
+    <style media="screen">
+        paper-material {
+            width: 300px;
+            height: 200px;
+            margin: 16px;
+            background-position: center;
+            color: white;
+        }
+
+        .green {
+            background: #259b24;
+            border: 1px solid #257E24;
+            border-radius: 40px;
+            width: 38px;
+            height: 38px;
+            float: right;
+            margin: 10px;
+        }
+
+        .green iron-icon {
+            margin: 8px;
+        }
+
+        paper-fab {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+    </style>
+
     <template>
-        <style media="screen">
-            paper-shadow {
-                width: 300px;
-                height: 200px;
-                margin: 16px;
-                background-position: center;
-                color: white;
-            }
+        <iron-ajax id="images" url="/images/" handleAs="json" on-response="parse"></iron-ajax>
 
-            .green {
-                background: #259b24;
-                border: 1px solid #257E24;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                float: right;
-                margin: 10px;
-            }
+        <div class="horizontal layout wrap">
+            <template is="dom-repeat" items="{{images}}">
+                <!--<core-tooltip label="Select image" position="bottom">-->
+                    <paper-material class="image" data-image$="{{ item.Name }}" style$="{{ background(item.Name) }}" elevation="1" on-click="select">
 
-            .green core-icon {
-                margin: 8px;
-            }
-
-            paper-fab {
-                position: absolute;
-                bottom: 10px;
-                right: 10px;
-            }
-        </style>
-
-        <core-ajax id="images" url="/images/" handleAs="json" auto on-core-response="{{ parse }}"></core-ajax>
-
-        <div horizontal layout wrap>
-            <template repeat="{{image in images}}">
-                <core-tooltip label="Select image" position="bottom">
-                    <paper-shadow class="image" data-image="{{ image.Name }}" style="background-image: url('{{ image.Name }}?width=300&amp;height=200')" z="1" on-click="{{ select }}">
                         <paper-ripple fit></paper-ripple>
-                        <template if="{{ image.Selected }}">
-                            <paper-shadow class="green" z="1">
-                                <core-icon icon="done"></core-icon>
-                            </paper-shadow>
+                        <template is="dom-if" if="{{ item.Selected }}">
+                            <paper-material class="green" elevation="1">
+                                <iron-icon icon="done"></iron-icon>
+                            </paper-material>
                         </template>
-                        <paper-fab mini icon="delete" title="delete" on-click="{{ delete }}"></paper-fab>
-                    </paper-shadow>
-                </core-tooltip>
+
+                        <paper-fab mini icon="delete" title="delete" on-click="delete"></paper-fab>
+                    </paper-material>
+                <!--</core-tooltip>-->
             </template>
         </div>
 
-        <core-ajax id="select" url="/select" handleAs="json" method="post"></core-ajax>
-        <core-ajax id="delete" method="delete"></core-ajax>
+        <iron-ajax id="select" url="/select" handleAs="json" method="post"></iron-ajax>
+        <iron-ajax id="delete" method="delete"></iron-ajax>
 
     </template>
 
     <script charset="utf-8">
         Polymer({
+            is: 'visionect-images',
             ready: function() {
-
-                var images = this.$.images;
-
-                setInterval(function() {
-                    images.go();
-                }, 1000);
-
-                this.images = [];
-
+                this.$.images.generateRequest();
+                this.images = [{"Name": "/images/15768075163_1c5329f4ee_k.jpg", "Selected": true}];
             },
             parse: function(e) {
                 this.images = e.detail.response;
+                var images = this.$.images;
+
+                setTimeout(function() {
+                    images.generateRequest();
+                }, 1000);
+            },
+            background: function(name) {
+                return "background-image: url('" + name + "?width=300&amp;height=200')";
             },
             select: function(e) {
                 this.images.forEach(function(image) {
@@ -91,7 +95,7 @@
                     Selected: true
                 });
                 this.$.select.contentType = 'application/json';
-                this.$.select.go();
+                this.$.select.generateRequest();
             },
             delete: function(e) {
                 e.stopPropagation();
@@ -102,8 +106,8 @@
                 }).indexOf(image), 1);
 
                 this.$.delete.url = image;
-                this.$.delete.go();
+                this.$.delete.generateRequest();
             }
         });
     </script>
-</polymer-element>
+</dom-module>

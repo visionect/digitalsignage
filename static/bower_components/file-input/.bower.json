@@ -24,14 +24,14 @@
   "dependencies": {
     "polymer": "Polymer/polymer#~0.5.x"
   },
-  "homepage": "https://github.com/garstasio/file-input",
+  "homepage": "https://github.com/rnicholus/file-input",
   "_release": "1.1.4",
   "_resolution": {
     "type": "version",
     "tag": "1.1.4",
     "commit": "b85fa1049f3da0578f76c5943065ed2a9ef4504b"
   },
-  "_source": "git://github.com/garstasio/file-input.git",
+  "_source": "git://github.com/rnicholus/file-input.git",
   "_target": "~1.1.4",
   "_originalSource": "file-input"
 }

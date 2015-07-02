@@ -3,17 +3,21 @@ ajax-form
 
 HTML forms on performance-enhancing drugs
 
-[![Build Status](https://travis-ci.org/garstasio/ajax-form.svg?branch=master)](https://travis-ci.org/garstasio/ajax-form)
+[![Build Status](https://travis-ci.org/rnicholus/ajax-form.svg?branch=master)](https://travis-ci.org/rnicholus/ajax-form)
 
 ## Installation
 
-`bower install ajax-form`
+`npm install ajax-form`
 
-...or if you have a bower.json file with an entry for ajax-form:
+## Use
 
-`bower update`
+Use ajax-form just like you would use a traditional form, with the exception of the required `is="ajax-form"` attribute
+that you _must_ include in your `<form>` element markup. Since ajax-form is a web component, you may need to include a
+web component polyfill, such as [webcomponents.js](http://webcomponents.org/) to ensure browsers
+that do not implement the WC spec are able to make use of ajax-form. Ajax-form has *no* hard
+dependencies.
 
-See the [component page](http://garstasio.github.io/ajax-form/components/ajax-form/) for complete documentation and demos.
+See the [API documentation page](http://ajax-form.raynicholus.com) for complete documentation and demos.
 
 
 ## Integration
@@ -43,7 +47,7 @@ need to include a little code to account for this.  Here are the steps to follow
 3. Ensure the validity of the input always matches the validity of your field.  You can
 do this via the `setCustomValidity` method present on an `HTMLInputElement`.
 
-See the [`setValidationTarget` method in the `<file-input>` custom element source code](https://github.com/garstasio/file-input/blob/1.1.4/file-input.js#L104)
+See the [`setValidationTarget` method in the `<file-input>` custom element source code](https://github.com/rnicholus/file-input/blob/1.1.4/file-input.js#L104)
 for an example.
 
 
@@ -51,12 +55,9 @@ for an example.
 ```
 npm install
 npm install -g grunt-cli
-bower update
 grunt
 ```
 
-- Running `grunt` without any parameters will test against a few locally installed browsers (see the codebase for details).  
+- Running `grunt` without any parameters will test against a few locally installed browsers (see the codebase for details).
 
-- Running `grunt wct-test:remote` will run tests against a number of browsers in SauceLabs.  Ensure you have your SauceLabs username and key attached to the proper environment variables first.
-
-See [documentation](https://github.com/Polymer/web-component-tester) for more details.
+- Running `grunt shell:wctSauce` will run tests against a number of browsers in SauceLabs.  Ensure you have your SauceLabs username and key attached to the proper environment variables first.
