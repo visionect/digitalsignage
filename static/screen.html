@@ -12,7 +12,7 @@
         <script charset="utf-8">
             document.addEventListener('DOMContentLoaded', function() {
                 var image = document.getElementsByTagName('img')[0];
-                image.src = encodeURIComponent('{{.}}') + '?width=' + window.innerWidth + '&height=' + window.innerHeight;
+                image.src = encodeURIComponent('{{.Selected}}') + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&height=' + window.innerHeight;
 
                 var preloadImage = new Image;
                 preloadImage.onload = function() {
@@ -28,7 +28,7 @@
 
                         if (image.src.indexOf(encodeURIComponent(data.Name)) == -1 || window.innerWidth != image.width || window.innerHeight != image.height) {
                             // Preload image in detached DOM
-                            preloadImage.src = encodeURIComponent(data.Name) + '?width=' + window.innerWidth + '&amp;height=' + window.innerHeight;
+                            preloadImage.src = encodeURIComponent(data.Name) + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&amp;height=' + window.innerHeight;
                         }
                     }
                 };

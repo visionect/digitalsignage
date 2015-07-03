@@ -6,6 +6,7 @@ import (
     "io"
     "io/ioutil"
     "image"
+    "image/draw"
     "image/jpeg"
     "image/png"
     "fmt"
@@ -60,6 +61,18 @@ func ListFolder() {
 }
 
 
+func removeCached(filename string) {
+    ext := filepath.Ext(filename)
+
+    matches, _ := filepath.Glob(filepath.Join(*cache, strings.TrimRight(filepath.Base(filename), ext) + "*" + ext))
+    if matches != nil {
+        for _, file := range matches {
+            os.Remove(file)
+        }
+    }
+}
+
+
 func GetImages(w http.ResponseWriter, r *http.Request) {
     if r.URL.Path == "/images/" {
         ListFolder()
@@ -95,11 +108,21 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
             width, err1 := strconv.Atoi(r.URL.Query().Get("width"))
             height, err2 := strconv.Atoi(r.URL.Query().Get("height"))
 
+            var x,y int
+            if x, err = strconv.Atoi(r.URL.Query().Get("x")); err != nil {
+                x = -1
+            }
+            if y, err = strconv.Atoi(r.URL.Query().Get("y")); err != nil {
+                y = -1
+            }
+
             if err1 == nil && err2 == nil && width > 0 && height > 0 {
                 ext := filepath.Ext(filename)
                 resizedFilename := strings.TrimRight(filepath.Base(filename), ext)
                 resizedFilename += "_" + strconv.Itoa(width)
                 resizedFilename += "_" + strconv.Itoa(height)
+                resizedFilename += "_" + strconv.Itoa(x)
+                resizedFilename += "_" + strconv.Itoa(y)
                 resizedFilename += ext
 
                 resizedFilename = filepath.Join(*cache, resizedFilename)
@@ -120,11 +143,22 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
                         return
                     }
 
-                    if !(src.Bounds().Max.X == width && src.Bounds().Max.Y == height) {
+                    if !(src.Bounds().Max.X == width && src.Bounds().Max.Y == height) || x > -1 || y > -1 {
 
-                        dst := image.NewRGBA(image.Rect(0, 0, width, height))
-
-                        graphics.Thumbnail(dst, src)
+                        var dst draw.Image
+                        if x>-1 || y>-1 {
+                            if x<0 {
+                                x=0
+                            }
+                            if y<0 {
+                                y=0
+                            }
+                            dst = image.NewRGBA(image.Rect(0, 0, src.Bounds().Max.X-x, src.Bounds().Max.Y-y))
+                            draw.Draw(dst, dst.Bounds(), src, image.Point{x, y}, draw.Src)
+                        } else {
+                            dst = image.NewRGBA(image.Rect(0, 0, width, height))
+                            graphics.Thumbnail(dst, src)
+                        }
 
                         fDst, err := os.Create(resizedFilename)
                         if err != nil {
@@ -151,12 +185,12 @@ func GetImages(w http.ResponseWriter, r *http.Request) {
             fmt.Printf("Serving image %s\n", filename)
 
         } else if r.Method == "DELETE" {
-            // TODO: remove cached resized versions of the image
             if err := os.Remove(filename); err != nil {
                 fmt.Printf("Error: %s\n", err.Error())
                 http.Error(w, err.Error(), http.StatusInternalServerError)
                 return
             }
+            removeCached(filename)
 
             fmt.Printf("Removed %s\n", filename)
 
@@ -222,6 +256,8 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
         return
     }
 
+    removeCached(header.Filename)
+
     fmt.Printf("Uploaded %s\n", header.Filename)
 
     w.WriteHeader(http.StatusNoContent)
@@ -247,7 +283,18 @@ func Screen(w http.ResponseWriter, r *http.Request) {
 
         t := template.New("screen")
         t, _ = t.Parse(string(data[:]))
-        t.Execute(w, selected)
+
+        templateData := struct {
+            Selected string
+            X string
+            Y string
+        }{
+            selected,
+            r.URL.Query().Get("x"),
+            r.URL.Query().Get("y"),
+        }
+
+        t.Execute(w, templateData)
     }
 }
 
