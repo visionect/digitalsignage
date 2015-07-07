@@ -10,6 +10,8 @@ digitalsignage
 
 3. Set Application URL for device in Visionect Server to `http://<server_address>:<server_port>/screen` (default port is 4000)
 
+4. You can use `http://<server_address>:<server_port>/screen?x=<offset_x>&y=<offset_y> to display only a part of the screen. This enables you to tile multiple displays together and designate one to display a certain part of the image. The parameters disable the automatic image scaling. 
+
 
 ## Development
 
