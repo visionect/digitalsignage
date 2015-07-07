@@ -67,7 +67,7 @@
             is: 'visionect-images',
             ready: function() {
                 this.$.images.generateRequest();
-                this.images = [{"Name": "/images/15768075163_1c5329f4ee_k.jpg", "Selected": true}];
+                this.images = [];
             },
             parse: function(e) {
                 this.images = e.detail.response;
@@ -78,7 +78,7 @@
                 }, 1000);
             },
             background: function(name) {
-                return "background-image: url('" + name + "?width=300&amp;height=200')";
+                return 'background-image: url("' + encodeURI(name) + '?width=300&amp;height=200")';
             },
             select: function(e) {
                 this.images.forEach(function(image) {
