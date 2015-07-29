@@ -1,0 +1,68 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-dropdown/iron-dropdown.html">
+<link rel="import" href="../bower_components/paper-menu/paper-menu.html">
+<link rel="import" href="../bower_components/paper-item/paper-item.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<!--<link rel="import" href="../bower_components/core-tooltip/core-tooltip.html">-->
+
+<dom-module id="visionect-toolbar">
+    <style media="screen">
+        paper-button {
+        }
+    </style>
+
+    <template>
+        <iron-ajax id="ajax" method="POST" url="/waveform" contentType="application/json" handleAs="json"></iron-ajax>
+
+        <paper-button raised on-click="changed">Render</paper-button>
+        <label for="waveform">
+            Waveform
+            <paper-button raised class="dropdown-trigger" on-click="dropdownClick">{{ waveformLabel(waveform) }}</paper-button>
+            <iron-dropdown id="dropdown" horizontal-align="right" vertical-align="top">
+                <div class="dropdown-content">
+                <paper-menu id="menu" selected$="{{ waveform }}" on-iron-select="changed">
+                    <paper-item>INIT</paper-item>
+                    <paper-item>DU</paper-item>
+                    <paper-item>GCC16</paper-item>
+                    <paper-item>GC4</paper-item>
+                    <paper-item>A2</paper-item>
+                    <paper-item>GL16</paper-item>
+                    <paper-item>DUx1</paper-item>
+                    <paper-item>DUx2</paper-item>
+                    <paper-item>DUx3</paper-item>
+                </paper-menu>
+                </div>
+            </iron-dropdown>
+
+        </label>
+
+    </template>
+
+    <script charset="utf-8">
+        Polymer({
+            is: 'visionect-toolbar',
+            ready: function() {
+                this.waveform = 0;
+            },
+            changed: function(e) {
+                this.waveform = parseInt(this.$.menu.selected);
+                this.$.dropdown.close();
+
+                this.$.ajax.body = JSON.stringify({
+                    Name: "",
+                    Render: true,
+                    Waveform: this.waveform
+                });
+                this.$.ajax.generateRequest();
+            },
+            dropdownClick: function(e) {
+                e.preventDefault();
+                this.$.dropdown.open();
+            },
+            waveformLabel: function(waveform) {
+                return this.$.menu.children[0].children[parseInt(waveform)].innerText;
+            }
+        });
+    </script>
+</dom-module>

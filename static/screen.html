@@ -5,18 +5,50 @@
             body {
                 margin: 0;
             }
+            .pixel {
+                width: 1px;
+                height: 1px;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            #white {
+                background: white;
+                left: 1px;
+            }
+            #black {
+                background: black;
+            }
         </style>
     </head>
     <body>
         <img />
+        <div id="black" class="pixel"></div>
+        <div id="white" class="pixel"></div>
         <script charset="utf-8">
             document.addEventListener('DOMContentLoaded', function() {
-                var image = document.getElementsByTagName('img')[0];
+                var image = document.getElementsByTagName('img')[0],
+                    white = document.getElementById('white'),
+                    black = document.getElementById('black'),
+                    waveform = {{.Waveform}};
                 image.src = encodeURIComponent('{{.Selected}}') + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&height=' + window.innerHeight;
+
+                var render = function() {
+                    white.style.left = +!white.offsetLeft+"px";
+                    black.style.left = +!black.offsetLeft+"px";
+                    console.log(white.offsetLeft, black.offsetLeft)
+                    if (typeof window.okular != 'undefined') {
+                        okular.RenderRectangles([{x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: 4, dithering: 0, waveform: waveform}]);
+                    }
+                    console.log("render " + waveform);
+                }
 
                 var preloadImage = new Image;
                 preloadImage.onload = function() {
                     image.src = this.src;
+                }
+                image.onload = function() {
+                    render();
                 }
 
                 var request = new XMLHttpRequest();
@@ -27,8 +59,12 @@
                         var data = JSON.parse(request.responseText);
 
                         if (image.src.indexOf(encodeURIComponent(data.Name)) == -1 || window.innerWidth != image.width || window.innerHeight != image.height) {
+                            waveform = data.Waveform;
                             // Preload image in detached DOM
                             preloadImage.src = encodeURIComponent(data.Name) + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&amp;height=' + window.innerHeight;
+                        } else if (data.Waveform != waveform || data.Render) {
+                            waveform = data.Waveform;
+                            render();
                         }
                     }
                 };

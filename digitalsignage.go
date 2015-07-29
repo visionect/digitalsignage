@@ -9,6 +9,7 @@ import (
     "image/draw"
     "image/jpeg"
     "image/png"
+    "time"
     "fmt"
     "html/template"
     "net/http"
@@ -25,12 +26,21 @@ type SelectableFile struct {
     Selected bool
 }
 
+type WaveformRender struct {
+    Name string
+    Waveform int
+    Render bool
+}
+
 var address = flag.String("address", "0.0.0.0", "server address")
 var port = flag.String("port", "4000", "server port")
 var cache = flag.String("cache", "cache", "folder for resized images")
 
 var folder = flag.String("images", "images", "folder with images")
 var selected string
+var waveform int
+var render bool
+var renderTimer *time.Timer
 var files []SelectableFile
 
 
@@ -266,7 +276,7 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 
 func Screen(w http.ResponseWriter, r *http.Request) {
     if r.Header.Get("Content-Type") == "application/json" {
-        jsonData, err := json.MarshalIndent(SelectableFile{selected, true}, "", "    ")
+        jsonData, err := json.MarshalIndent(WaveformRender{selected, waveform, render}, "", "    ")
         if err != nil {
             fmt.Printf("Error: %s\n", err.Error())
             http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -288,13 +298,49 @@ func Screen(w http.ResponseWriter, r *http.Request) {
             Selected string
             X string
             Y string
+            Waveform int
         }{
             selected,
             r.URL.Query().Get("x"),
             r.URL.Query().Get("y"),
+            waveform,
         }
 
         t.Execute(w, templateData)
+    }
+}
+
+
+func Waveform(w http.ResponseWriter, r *http.Request) {
+    if r.Method == "GET" {
+        w.Header().Set("Content-Type", "application/json")
+        jsonData, _ := json.MarshalIndent(WaveformRender{selected, waveform, render}, "", "    ")
+        w.Write(jsonData)
+    } else if r.Method == "POST" {
+        jsonDoc, err := ioutil.ReadAll(r.Body);
+        if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        data := WaveformRender{}
+        err = json.Unmarshal(jsonDoc, &data)
+        if err != nil {
+            fmt.Println(err)
+        }
+
+        waveform = data.Waveform
+        render = true
+
+        if renderTimer != nil {
+            renderTimer.Stop()
+        }
+
+        renderTimer = time.AfterFunc(5*time.Second, func() {
+            render = false
+            renderTimer = nil
+        })
     }
 }
 
@@ -310,6 +356,7 @@ func main() {
     http.HandleFunc("/select", SelectImage)
     http.HandleFunc("/upload", UploadImage)
     http.HandleFunc("/screen", Screen)
+    http.HandleFunc("/waveform", Waveform)
 
     http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"}))
 
@@ -318,6 +365,10 @@ func main() {
     fmt.Printf("\nStarting server at: http://%s:%s/ \n", *address, *port)
     fmt.Printf("Serving images from: %s \n", *folder)
     fmt.Println("\nHelp available with -h, exit with Ctrl-C")
+
+    waveform = 0
+    render = false
+    renderTimer = nil
 
     err := http.ListenAndServe(*address + ":" + *port, nil)
     if err != nil {
