@@ -36,11 +36,11 @@
                 var render = function() {
                     white.style.left = +!white.offsetLeft+"px";
                     black.style.left = +!black.offsetLeft+"px";
-                    console.log(white.offsetLeft, black.offsetLeft)
+
                     if (typeof window.okular != 'undefined') {
-                        okular.RenderRectangles([{x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: 4, dithering: 0, waveform: waveform}]);
+                        okular.RenderRectangles([{x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, waveform: waveform}]);
                     }
-                    console.log("render " + waveform);
+                    console.log({x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, waveform: waveform})
                 }
 
                 var preloadImage = new Image;

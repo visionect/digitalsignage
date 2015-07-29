@@ -22,10 +22,9 @@
             <iron-dropdown id="dropdown" horizontal-align="right" vertical-align="top">
                 <div class="dropdown-content">
                 <paper-menu id="menu" selected$="{{ waveform }}" on-iron-select="changed">
-                    <paper-item>INIT</paper-item>
                     <paper-item>DU</paper-item>
                     <paper-item>GCC16</paper-item>
-                    <paper-item>GC4</paper-item>
+                    <paper-item disabled>GC4</paper-item>
                     <paper-item>A2</paper-item>
                     <paper-item>GL16</paper-item>
                     <paper-item>DUx1</paper-item>
@@ -46,13 +45,16 @@
                 this.waveform = 0;
             },
             changed: function(e) {
+                if (this.$.menu.selectedItem.hasAttribute('disabled')) {
+                    return false;
+                }
                 this.waveform = parseInt(this.$.menu.selected);
                 this.$.dropdown.close();
 
                 this.$.ajax.body = JSON.stringify({
                     Name: "",
                     Render: true,
-                    Waveform: this.waveform
+                    Waveform: this.waveform+1
                 });
                 this.$.ajax.generateRequest();
             },

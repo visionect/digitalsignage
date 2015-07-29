@@ -366,7 +366,7 @@ func main() {
     fmt.Printf("Serving images from: %s \n", *folder)
     fmt.Println("\nHelp available with -h, exit with Ctrl-C")
 
-    waveform = 0
+    waveform = 1
     render = false
     renderTimer = nil
 
