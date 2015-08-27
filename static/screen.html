@@ -38,9 +38,10 @@
                     black.style.left = +!black.offsetLeft+"px";
 
                     if (typeof window.okular != 'undefined') {
-                        okular.RenderRectangles([{x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, waveform: waveform}]);
+                        okular.Setup((waveform == 2 || waveform == 5) ? 4 : 1, 0, 0x100|waveform);
+                        //okular.RenderRectangles([{x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, displayUpdateOptions: 0x100|waveform}]);
                     }
-                    console.log({x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, waveform: waveform})
+                    console.table({x:0, y:0, width: window.innerWidth, height: window.innerHeight, encoding: (waveform == 2 || waveform == 5) ? 4 : 1, dithering: 0, displayUpdateOptions: 0x100|waveform})
                 }
 
                 var preloadImage = new Image;
