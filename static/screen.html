@@ -30,7 +30,14 @@
                 var image = document.getElementsByTagName('img')[0],
                     white = document.getElementById('white'),
                     black = document.getElementById('black'),
+                    refresh = false,
                     waveform = {{.Waveform}};
+
+                image.onload = function() {
+                    render();
+                    refresh = true;
+                }
+
                 image.src = encodeURIComponent('{{.Selected}}') + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&height=' + window.innerHeight;
 
                 var render = function() {
@@ -48,9 +55,6 @@
                 preloadImage.onload = function() {
                     image.src = this.src;
                 }
-                image.onload = function() {
-                    render();
-                }
 
                 var request = new XMLHttpRequest();
 
@@ -63,6 +67,7 @@
                             waveform = data.Waveform;
                             // Preload image in detached DOM
                             preloadImage.src = encodeURIComponent(data.Name) + '?x={{.X}}&y={{.Y}}&width=' + window.innerWidth + '&amp;height=' + window.innerHeight;
+                            refresh = false;
                         } else if (data.Waveform != waveform || data.Render) {
                             waveform = data.Waveform;
                             render();
@@ -71,10 +76,12 @@
                 };
 
                 setInterval(function() {
-                    request.open('GET', '/screen', true);
-                    request.setRequestHeader('Content-Type', 'application/json');
-                    request.send();
-                }, 5000);
+                    if (refresh) {
+                        request.open('GET', '/screen', true);
+                        request.setRequestHeader('Content-Type', 'application/json');
+                        request.send();
+                    }
+                }, {{.Polling}});
             }, false);
         </script>
     </body>

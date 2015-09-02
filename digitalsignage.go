@@ -34,6 +34,7 @@ type WaveformRender struct {
 
 var address = flag.String("address", "0.0.0.0", "server address")
 var port = flag.String("port", "4000", "server port")
+var polling = flag.Int("polling", 5000, "device polling in ms")
 var cache = flag.String("cache", "cache", "folder for resized images")
 
 var folder = flag.String("images", "images", "folder with images")
@@ -299,11 +300,13 @@ func Screen(w http.ResponseWriter, r *http.Request) {
             X string
             Y string
             Waveform int
+            Polling int
         }{
             selected,
             r.URL.Query().Get("x"),
             r.URL.Query().Get("y"),
             waveform,
+            *polling,
         }
 
         t.Execute(w, templateData)
