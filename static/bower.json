@@ -24,6 +24,7 @@
     "paper-header-panel": "PolymerElements/paper-header-panel#~1.0.2",
     "paper-material": "PolymerElements/paper-material#~1.0.0",
     "paper-fab": "PolymerElements/paper-fab#~1.0.2",
+    "paper-input": "PolymerElements/paper-input#~1.1.0",
     "iron-media-query": "PolymerElements/iron-media-query#~1.0.2"
   }
 }

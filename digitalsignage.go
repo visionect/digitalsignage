@@ -1,6 +1,8 @@
 package main
 
 import (
+    "bytes"
+    "encoding/gob"
     "encoding/json"
     "flag"
     "io"
@@ -16,8 +18,10 @@ import (
     "path/filepath"
     "strconv"
     "strings"
+    "time"
     "code.google.com/p/graphics-go/graphics"
     "github.com/elazarl/go-bindata-assetfs"
+    "github.com/boltdb/bolt"
 )
 
 type SelectableFile struct {
@@ -30,14 +34,17 @@ var port = flag.String("port", "4000", "server port")
 var cache = flag.String("cache", "cache", "folder for resized images")
 
 var folder = flag.String("images", "images", "folder with images")
-var selected string
 var files []SelectableFile
 
+var cancelSleep chan bool
 
 func ListFolder() {
     files = []SelectableFile{}
     raw, _ := ioutil.ReadDir(*folder)
     noneSelected := true
+
+    config, _ := getConfig()
+
     for _, f := range raw {
         ext := strings.ToLower(filepath.Ext(f.Name()))
         if ext == ".png" || ext == ".jpg" || ext == ".jpeg" {
@@ -46,7 +53,7 @@ func ListFolder() {
                 name = name[1:]
             }
             isSelected := false
-            if name == selected {
+            if name == config.SelectedImage {
                 isSelected = true
                 noneSelected = false
             }
@@ -55,8 +62,9 @@ func ListFolder() {
     }
 
     if noneSelected && len(files) > 0 {
-        selected = files[0].Name
+        config.SelectedImage = files[0].Name
         files[0].Selected = true
+        saveConfig(config)
     }
 }
 
@@ -217,15 +225,19 @@ func SelectImage(w http.ResponseWriter, r *http.Request) {
 
     fmt.Printf("Selected %s\n", selectedFile.Name)
 
+    config, _ := getConfig()
+
     for _, file := range files {
         if file.Name == selectedFile.Name {
-            selected = selectedFile.Name
+            config.SelectedImage = selectedFile.Name
+            saveConfig(config)
             ListFolder()
 
             w.WriteHeader(http.StatusNoContent)
             return
         }
     }
+
 
     w.WriteHeader(http.StatusBadRequest)
 }
@@ -265,8 +277,9 @@ func UploadImage(w http.ResponseWriter, r *http.Request) {
 
 
 func Screen(w http.ResponseWriter, r *http.Request) {
+    config, _ := getConfig()
     if r.Header.Get("Content-Type") == "application/json" {
-        jsonData, err := json.MarshalIndent(SelectableFile{selected, true}, "", "    ")
+        jsonData, err := json.MarshalIndent(SelectableFile{config.SelectedImage, true}, "", "    ")
         if err != nil {
             fmt.Printf("Error: %s\n", err.Error())
             http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -284,12 +297,14 @@ func Screen(w http.ResponseWriter, r *http.Request) {
         t := template.New("screen")
         t, _ = t.Parse(string(data[:]))
 
+        config, _ := getConfig()
+
         templateData := struct {
-            Selected string
+            Config Config
             X string
             Y string
         }{
-            selected,
+            config,
             r.URL.Query().Get("x"),
             r.URL.Query().Get("y"),
         }
@@ -298,18 +313,173 @@ func Screen(w http.ResponseWriter, r *http.Request) {
     }
 }
 
+func gobDecode(data []byte, out interface{}) (error) {
+    buf := bytes.NewBuffer(data)
+    dec := gob.NewDecoder(buf)
+    err := dec.Decode(out)
+    return err
+}
+
+
+func gobEncode(data interface{}) ([]byte, error) {
+    buf := new(bytes.Buffer)
+    enc := gob.NewEncoder(buf)
+    err := enc.Encode(data)
+    if err != nil {
+        return nil, err
+    }
+    return buf.Bytes(), nil
+}
+
+type Config struct {
+    Rotate          int
+    SelectedImage   string
+}
+
+var db *bolt.DB
+
+func getConfig() (Config, error) {
+    config := &Config{}
+    err := db.View(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte("data"))
+
+        val := b.Get([]byte("config"))
+        if val == nil {
+            return fmt.Errorf("No config in database")
+        }
+
+        return gobDecode(val, config)
+    })
+    return *config, err
+}
+
+func saveConfig(config Config) error {
+    return db.Update(func(tx *bolt.Tx) error {
+        b := tx.Bucket([]byte("data"))
+
+        encoded, err := gobEncode(config)
+        if err != nil {
+            return err
+        }
+
+        return b.Put([]byte("config"), encoded)
+    })
+}
+
+func ConfigHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method == "GET" {
+        config, err := getConfig()
+        if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        jsonData, err := json.MarshalIndent(config, "", "    ")
+        if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        w.Write(jsonData)
+    } else {
+        jsonDoc, err := ioutil.ReadAll(r.Body);
+        if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+
+        config := Config{}
+        if err := json.Unmarshal(jsonDoc, &config); err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusBadRequest)
+            return
+        }
+        fmt.Println(config)
+        saveConfig(config)
+        cancelSleep <- true
+
+        jsonData, err := json.MarshalIndent(config, "", "    ")
+        if err != nil {
+            fmt.Printf("Error: %s\n", err.Error())
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+            return
+        }
+
+        w.Write(jsonData)
+    }
+}
 
 func main() {
     flag.Parse()
+
+    var err error
+    db, err = bolt.Open("database.db", 0600, nil)
+    if err != nil {
+        panic(err)
+    }
+    defer db.Close()
+
+    db.Update(func(tx *bolt.Tx) error {
+        _, err := tx.CreateBucketIfNotExists([]byte("data"))
+        return err
+    })
+
+    var config Config
+    config, err = getConfig()
+    if err != nil {
+        config = Config{0, ""}
+        saveConfig(config)
+    }
 
     os.Mkdir(*cache, 0755)
     os.Mkdir(*folder, 0755)
     ListFolder()
 
+    cancelSleep = make(chan bool)
+
+    go func() {
+        Loop:
+        for {
+            config, _ := getConfig()
+            if config.Rotate > 0 {
+                timer := make(chan bool)
+                go func() {
+                    time.Sleep(time.Duration(config.Rotate) * time.Second)
+                    timer <- true
+                }()
+
+                select {
+                case <- cancelSleep:
+                    continue Loop
+                case <- timer:
+                }
+
+                for i, file := range files {
+                    if file.Selected {
+                        if i == len(files) - 1 {
+                            config.SelectedImage = files[0].Name
+                        } else {
+                            config.SelectedImage = files[i+1].Name
+                        }
+                        saveConfig(config)
+                        ListFolder()
+                        break
+                    }
+                }
+            } else {
+                time.Sleep(time.Second)
+            }
+        }
+    }()
+
     http.HandleFunc("/images/", GetImages)
     http.HandleFunc("/select", SelectImage)
     http.HandleFunc("/upload", UploadImage)
     http.HandleFunc("/screen", Screen)
+    http.HandleFunc("/config", ConfigHandler)
 
     http.Handle("/", http.FileServer(&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: "static"}))
 
@@ -319,7 +489,7 @@ func main() {
     fmt.Printf("Serving images from: %s \n", *folder)
     fmt.Println("\nHelp available with -h, exit with Ctrl-C")
 
-    err := http.ListenAndServe(*address + ":" + *port, nil)
+    err = http.ListenAndServe(*address + ":" + *port, nil)
     if err != nil {
         panic("ListenAndServe: " + err.Error())
     }

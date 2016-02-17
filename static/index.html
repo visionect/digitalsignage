@@ -13,6 +13,7 @@
     <link rel="import" href="bower_components/iron-icons/iron-icons.html">
     <link rel="import" href="bower_components/paper-header-panel/paper-header-panel.html">
     <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+    <link rel="import" href="bower_components/paper-input/paper-input.html">
 
     <link rel="import" href="bower_components/paper-toast/paper-toast.html">
     <link rel="import" href="bower_components/paper-spinner/paper-spinner.html">
@@ -74,6 +75,23 @@
         top: 8px;
     }
 
+    paper-input {
+            position: fixed;
+        right: 50px;
+        top: 7px;
+    }
+
+    </style>
+
+    <style is="custom-style">
+    :root {
+        --paper-input-container-color: white;
+        --paper-input-container-input-color: white;
+        --paper-input-container: {
+            padding-top: 0;
+        };
+    }
+
     </style>
 
 </head>
@@ -82,6 +100,10 @@
     <paper-header-panel>
         <paper-toolbar style="background: #4285f4;">
             <span id="logo"> <img src="/logo_only.png" alt="Visionect" /><span>Digital signage demo by Visionect</span></span>
+                <iron-ajax id="conf_get" method="GET" url="/config" contentType="application/json" handleAs="json" on-response="javascript:alert('d')"></iron-ajax>
+                <iron-ajax id="conf_save" method="POST" url="/config" contentType="application/json" handleAs="json"></iron-ajax>
+
+                <paper-input id="Rotate" label="Rotate images (in seconds)" type="number" min="0"></paper-input>
 
                 <label for="file-upload" class="btn btn-primary">
                     <paper-spinner id="loading"></paper-spinner>
@@ -103,6 +125,34 @@
 
     var upload_icon = document.getElementsByTagName("iron-icon")[0],
         spinner = document.getElementById("loading");
+
+    var conf_get = document.getElementById('conf_get'),
+        conf_save = document.getElementById('conf_save'),
+        input = document.getElementById('Rotate'),
+        config;
+
+    conf_get.addEventListener('response', function(e) {
+        if (document.activeElement != input) {
+            input.value = e.detail.response.Rotate;
+        }
+        config = e.detail.response;
+
+        setTimeout(function() {
+            conf_get.generateRequest();
+        }, 1000);
+    });
+
+    input.oninput = function() {
+        config.Rotate = parseInt(input.value);
+        conf_save.body = JSON.stringify(config);
+        conf_save.generateRequest();
+    }
+
+    input.onblur = function() {
+        input.value = config.Rotate;
+    }
+
+    conf_get.generateRequest();
 
     document.getElementById('file-upload').addEventListener('change', function(e) {
         if (e.target.files.length) {
