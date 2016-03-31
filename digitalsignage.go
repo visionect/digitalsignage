@@ -300,11 +300,11 @@ func Screen(w http.ResponseWriter, r *http.Request) {
         config, _ := getConfig()
 
         templateData := struct {
-            Config Config
+            Selected string
             X string
             Y string
         }{
-            config,
+            config.SelectedImage,
             r.URL.Query().Get("x"),
             r.URL.Query().Get("y"),
         }
