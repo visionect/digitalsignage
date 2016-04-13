@@ -397,9 +397,13 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
             http.Error(w, err.Error(), http.StatusBadRequest)
             return
         }
+        oldConf, _ := getConfig()
         fmt.Println(config)
         saveConfig(config)
-        cancelSleep <- true
+
+        if oldConf.Rotate > 0 {
+            cancelSleep <- true
+        }
 
         jsonData, err := json.MarshalIndent(config, "", "    ")
         if err != nil {
