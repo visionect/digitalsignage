@@ -152,7 +152,9 @@
         input.value = config.Rotate;
     }
 
-    conf_get.generateRequest();
+    window.addEventListener('WebComponentsReady', function(e) {
+        conf_get.generateRequest();
+    });
 
     document.getElementById('file-upload').addEventListener('change', function(e) {
         if (e.target.files.length) {
