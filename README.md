@@ -29,3 +29,8 @@ Front end is done with [Polymer](https://www.polymer-project.org/).
 Everything custom is in files `static/index.html` and `static/elements/visionect-images.html`.
 
 The page that is used for displaying the content is done in `static/screen.html`.
+
+
+## Making a release
+
+`make release` will generate 3 binarys with in `release` folder for linux, OS X and Windows.
