@@ -33,4 +33,6 @@ The page that is used for displaying the content is done in `static/screen.html`
 
 ## Making a release
 
-`make release` will generate 3 binarys with in `release` folder for linux, OS X and Windows.
+`make -j4 release` will generate 3 binaries with in `release` folder for linux, OS X and Windows.
+
+If you have `upx` installed you can use `make -j4 compress` which will make much smaller binaries.
